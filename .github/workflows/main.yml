@@ -20,20 +20,25 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Force Build APK
+    - name: Ultimate Build Script
       run: |
-        # البحث عن ملف gradlew وإصلاح صلاحياته
-        find . -name gradlew -exec chmod +x {} +
+        # 1. البحث عن مكان ملف gradlew
+        GRADLEW_PATH=$(find . -name gradlew | head -n 1)
         
-        # البحث عن المجلد الذي يحتوي على ملف البناء وتشغيله
-        PROJECT_PATH=$(find . -name build.gradle.kts -exec dirname {} + | head -n 1)
-        cd "$PROJECT_PATH"
+        if [ -z "$GRADLEW_PATH" ]; then
+          echo "❌ خطأ: لم يتم العثور على ملف gradlew. تأكد من رفع جميع ملفات المشروع!"
+          ls -R # لعرض الملفات الموجودة حالياً للتأكد
+          exit 1
+        fi
         
-        # إنشاء ملف gradle.properties لضمان تفعيل AndroidX
-        echo "android.useAndroidX=true" > gradle.properties
-        echo "android.enableJetifier=true" >> gradle.properties
+        # 2. الانتقال للمجلد الذي يحتوي على gradlew
+        PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
+        echo "✅ تم العثور على المشروع في: $PROJECT_ROOT"
+        cd "$PROJECT_ROOT"
         
-        ./gradlew assembleDebug --stacktrace
+        # 3. إصلاح الصلاحيات وتشغيل البناء
+        chmod +x gradlew
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
