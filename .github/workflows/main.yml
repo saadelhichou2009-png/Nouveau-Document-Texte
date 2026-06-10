@@ -1,4 +1,4 @@
-name: Android Build Self-Fix
+name: Android Build Final Fix
 
 on:
   push:
@@ -18,23 +18,28 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Create Missing Gradle Wrapper
+      - name: Fix Project and Build
         run: |
           cd RATBot
-          # إنشاء ملف gradlew إذا كان مفقوداً
-          if [ ! -f "gradlew" ]; then
-            echo "🔧 Fixing missing gradlew..."
-            gradle wrapper --gradle-version 8.10.2
-          fi
-          chmod +x gradlew
+          
+          # 1. إنشاء ملف settings.gradle.kts لضمان وجود المستودعات
+          echo 'pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }' > settings.gradle.kts
+          echo 'dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }' >> settings.gradle.kts
+          echo 'rootProject.name = "RATBot"' >> settings.gradle.kts
+          echo 'include(":app")' >> settings.gradle.kts
 
-      - name: Build APK
-        run: |
-          cd RATBot
-          # تفعيل إعدادات AndroidX لضمان عدم حدوث أخطاء
+          # 2. إنشاء ملف gradle.properties
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
+
+          # 3. بناء المشروع باستخدام Gradle المتاح في النظام مباشرة
+          # سنستخدم إصدار AGP مستقر (8.7.2) بدلاً من 9.2.1 المتعطل
+          sed -i "s/9.2.1/8.7.2/g" build.gradle.kts || true
+          sed -i "s/9.2.1/8.7.2/g" app/build.gradle.kts || true
           
+          # إنشاء gradlew
+          gradle wrapper --gradle-version 8.10.2
+          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
