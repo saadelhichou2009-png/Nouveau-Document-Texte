@@ -1,4 +1,4 @@
-name: Android Build Advanced
+name: Android Build Self-Fix
 
 on:
   push:
@@ -18,19 +18,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Create Missing Gradle Wrapper
+        run: |
+          cd RATBot
+          # إنشاء ملف gradlew إذا كان مفقوداً
+          if [ ! -f "gradlew" ]; then
+            echo "🔧 Fixing missing gradlew..."
+            gradle wrapper --gradle-version 8.10.2
+          fi
+          chmod +x gradlew
+
       - name: Build APK
         run: |
-          # الانتقال لمجلد المشروع
           cd RATBot
+          # تفعيل إعدادات AndroidX لضمان عدم حدوث أخطاء
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
           
-          # التأكد من وجود ملف gradlew وإصلاحه
-          if [ ! -f "gradlew" ]; then
-            echo "❌ خطأ: ملف gradlew مفقود في مجلد RATBot!"
-            exit 1
-          fi
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
